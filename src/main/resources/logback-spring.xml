@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         Development Profile: Human-readable console output with DEBUG
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <springProfile name="default,dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg %mdc%n</pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <!-- Dev: verbose app logging for debugging -->
+        <logger name="com.twitter" level="DEBUG"/>
+    </springProfile>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         Production/Docker Profile: JSON output for log aggregation, INFO level
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <springProfile name="prod,docker">
+        <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeMdcKeyName>requestId</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="JSON"/>
+        </root>
+        <!-- Prod: application at DEBUG for flow tracing, WARN for frameworks -->
+        <logger name="com.twitter" level="DEBUG"/>
+        <logger name="org.springframework.jdbc" level="WARN"/>
+    </springProfile>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         Common: Quiet noisy libraries
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <logger name="org.apache.kafka" level="WARN"/>
+    <logger name="org.springframework.kafka" level="WARN"/>
+    <logger name="org.springframework.jdbc" level="WARN"/>
+    <logger name="org.springframework.transaction" level="WARN"/>
+    <logger name="io.lettuce" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+</configuration>

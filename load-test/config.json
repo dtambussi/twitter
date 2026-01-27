@@ -1,0 +1,23 @@
+{
+  "users": {
+    "regular": 50,
+    "celebrities": 2
+  },
+  "activity": {
+    "tweets_per_user": 10,
+    "timeline_reads_per_user": 5,
+    "follows_per_regular_user": 7,
+    "unfollows_per_user": 3,
+    "pagination_page_size": 10
+  },
+  "concurrency": {
+    "max_concurrent_requests": 50
+  },
+  "timing": {
+    "delay_after_writes_ms": 2000
+  },
+  "thresholds": {
+    "max_error_rate_percent": 5,
+    "max_p95_latency_ms": 2000
+  }
+}

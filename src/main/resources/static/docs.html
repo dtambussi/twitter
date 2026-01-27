@@ -1,0 +1,388 @@
+<!doctype html>
+<html>
+<head>
+    <title>Twitter API</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f9fc; color: #32325d; display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background: #0a2540; color: #fff; padding: 24px 0; overflow-y: auto; position: fixed; height: 100vh; }
+        .sidebar-header { padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header h1 { font-size: 20px; font-weight: 600; }
+        .sidebar-header p { font-size: 13px; color: #8898aa; margin-top: 4px; }
+        .nav-section { padding: 16px 0; }
+        .nav-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #8898aa; padding: 8px 24px; }
+        .nav-item { display: flex; align-items: center; padding: 8px 24px; cursor: pointer; transition: background 0.15s; font-size: 14px; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); }
+        .nav-item.active { background: rgba(99,91,255,0.2); border-right: 2px solid #635bff; }
+        .method-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-right: 10px; min-width: 36px; text-align: center; }
+        .method-badge.get { background: #4caf50; color: #fff; }
+        .method-badge.post { background: #635bff; color: #fff; }
+        .method-badge.delete { background: #fa755a; color: #fff; }
+        
+        /* Main Content */
+        .main { margin-left: 280px; flex: 1; padding: 32px 48px; }
+        .main h2 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        .main .description { color: #6b7c93; margin-bottom: 32px; }
+        .main .description code { background: #e6ebf1; padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; color: #32325d; }
+        
+        /* Request Panel */
+        .panel { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px; overflow: hidden; }
+        .panel-header { background: #f6f9fc; padding: 16px 20px; border-bottom: 1px solid #e6ebf1; font-weight: 600; font-size: 14px; }
+        .panel-body { padding: 20px; }
+        
+        /* URL Bar */
+        .url-bar { display: flex; gap: 12px; align-items: center; background: #f6f9fc; border-radius: 6px; padding: 8px 12px; margin-bottom: 20px; }
+        .url-bar select { background: transparent; border: none; font-weight: 600; font-size: 14px; color: #635bff; cursor: pointer; outline: none; }
+        .url-bar input { flex: 1; background: transparent; border: none; font-size: 14px; font-family: 'SF Mono', Monaco, monospace; outline: none; color: #32325d; }
+        .url-bar button { background: #635bff; color: #fff; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.15s; }
+        .url-bar button:hover { background: #5851ea; }
+        
+        /* Headers */
+        .headers-section { margin-bottom: 20px; }
+        .headers-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .headers-title span { font-size: 12px; color: #6b7c93; font-weight: 600; text-transform: uppercase; }
+        .add-header-btn { background: none; border: 1px solid #e6ebf1; color: #635bff; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+        .add-header-btn:hover { background: #f6f9fc; border-color: #635bff; }
+        .header-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; }
+        .header-row label { font-size: 12px; color: #6b7c93; min-width: 80px; }
+        .header-row input { flex: 1; padding: 10px 12px; border: 1px solid #e6ebf1; border-radius: 4px; font-size: 14px; font-family: 'SF Mono', Monaco, monospace; }
+        .header-row input:focus { outline: none; border-color: #635bff; box-shadow: 0 0 0 2px rgba(99,91,255,0.1); }
+        .header-row .key-input { flex: 0 0 140px; }
+        .header-row .value-input { flex: 1; }
+        .remove-header-btn { background: none; border: none; color: #fa755a; cursor: pointer; font-size: 18px; padding: 0 8px; opacity: 0.6; }
+        .remove-header-btn:hover { opacity: 1; }
+        
+        /* Body */
+        textarea { width: 100%; padding: 12px; border: 1px solid #e6ebf1; border-radius: 4px; font-size: 13px; font-family: 'SF Mono', Monaco, monospace; resize: vertical; min-height: 100px; }
+        textarea:focus { outline: none; border-color: #635bff; box-shadow: 0 0 0 2px rgba(99,91,255,0.1); }
+        
+        /* Response */
+        .response-header { display: flex; justify-content: space-between; align-items: center; }
+        .status-badge { font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 4px; }
+        .status-badge.success { background: #d4edda; color: #155724; }
+        .status-badge.error { background: #f8d7da; color: #721c24; }
+        pre { background: #0a2540; color: #a3acb9; padding: 16px; border-radius: 6px; font-size: 13px; font-family: 'SF Mono', Monaco, monospace; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+        pre .string { color: #7ec699; }
+        pre .number { color: #f08d49; }
+        pre .key { color: #e6db74; }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>Twitter API</h1>
+            <p>v1.0 Reference</p>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Tweets</div>
+            <div class="nav-item" onclick="loadEndpoint('POST', '/api/v1/tweets', {content: 'Hello world!'})">
+                <span class="method-badge post">POST</span> Create Tweet
+            </div>
+            <div class="nav-item" onclick="loadEndpoint('GET', '/api/v1/users/{userId}/tweets?limit=20')">
+                <span class="method-badge get">GET</span> Get User Tweets
+            </div>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Timeline</div>
+            <div class="nav-item" onclick="loadEndpoint('GET', '/api/v1/users/{userId}/timeline?limit=20')">
+                <span class="method-badge get">GET</span> Get Timeline
+            </div>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Follows</div>
+            <div class="nav-item" onclick="loadEndpoint('GET', '/api/v1/users/{userId}/followers?limit=20')">
+                <span class="method-badge get">GET</span> Get Followers
+            </div>
+            <div class="nav-item" onclick="loadEndpoint('GET', '/api/v1/users/{userId}/following?limit=20')">
+                <span class="method-badge get">GET</span> Get Following
+            </div>
+            <div class="nav-item" onclick="loadEndpoint('POST', '/api/v1/users/{userId}/follow/{targetId}')">
+                <span class="method-badge post">POST</span> Follow User
+            </div>
+            <div class="nav-item" onclick="loadEndpoint('DELETE', '/api/v1/users/{userId}/follow/{targetId}')">
+                <span class="method-badge delete">DEL</span> Unfollow User
+            </div>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Guide</div>
+            <div class="nav-item" onclick="showPaginationGuide()">
+                <span class="method-badge" style="background:#6b7c93;">?</span> Pagination
+            </div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <h2 id="endpointTitle">Create Tweet</h2>
+        <p class="description" id="endpointDesc">Create a new tweet for the authenticated user.</p>
+        
+        <div class="panel">
+            <div class="panel-header">Request</div>
+            <div class="panel-body">
+                <div class="url-bar">
+                    <select id="method" onchange="updateMethod()">
+                        <option value="GET">GET</option>
+                        <option value="POST" selected>POST</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <input type="text" id="url">
+                    <button onclick="sendRequest()">Send</button>
+                </div>
+                
+                <div class="headers-section">
+                    <div class="headers-title">
+                        <span>Headers</span>
+                        <button class="add-header-btn" onclick="addHeader()">+ Add Header</button>
+                    </div>
+                    <div class="header-row">
+                        <input type="text" class="key-input" value="X-User-Id" readonly style="background:#f6f9fc;">
+                        <input type="text" class="value-input" id="userId" value="550e8400-e29b-41d4-a716-446655440000">
+                    </div>
+                    <div id="customHeaders"></div>
+                </div>
+                
+                <div id="bodySection">
+                    <label style="display:block; font-size:12px; color:#6b7c93; margin-bottom:8px;">Request Body</label>
+                    <textarea id="body">{"content": "Hello world!"}</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-header">
+                <div class="response-header">
+                    <span>Response</span>
+                    <span id="statusBadge"></span>
+                </div>
+            </div>
+            <div class="panel-body">
+                <pre id="response">Response will appear here...</pre>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const DEFAULT_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
+        const TARGET_USER_ID = '660e8400-e29b-41d4-a716-446655440001';
+        const BASE_URL = window.location.origin; // Auto-detect: localhost or deployed server
+        
+        function loadEndpoint(method, path, body = null) {
+            const userId = document.getElementById('userId').value || DEFAULT_USER_ID;
+            const resolvedPath = path
+                .replace('{userId}', userId)
+                .replace('{targetId}', TARGET_USER_ID);
+            
+            document.getElementById('method').value = method;
+            document.getElementById('url').value = BASE_URL + resolvedPath;
+            document.getElementById('body').value = body ? JSON.stringify(body, null, 2) : '';
+            
+            updateMethod();
+            
+            // Update title
+            const titles = {
+                'POST /api/v1/tweets': ['Create Tweet', 'Create a new tweet for the authenticated user.'],
+                'GET /api/v1/users/{userId}/tweets': ['Get User Tweets', `Retrieve tweets for a user.
+
+<div style="background:#f6f9fc; padding:16px; border-radius:6px; margin-top:16px; font-size:13px;">
+<b>Pagination Example:</b><br><br>
+<b>1. First page:</b><br>
+<code>GET /api/v1/users/{userId}/tweets?limit=10</code><br><br>
+<b>2. Response:</b><br>
+<code>{ "data": [...], "pagination": { "nextCursor": "0192fd7e-abc", "hasMore": true } }</code><br><br>
+<b>3. Next page (use nextCursor):</b><br>
+<code>GET /api/v1/users/{userId}/tweets?limit=10&cursor=0192fd7e-abc</code><br><br>
+<b>4. Repeat until hasMore is false</b>
+</div>`],
+                'GET /api/v1/users/{userId}/timeline': ['Get Timeline', `Retrieve the home timeline for a user.
+
+<div style="background:#f6f9fc; padding:16px; border-radius:6px; margin-top:16px; font-size:13px;">
+<b>Pagination Example:</b><br><br>
+<b>1. First page:</b><br>
+<code>GET /api/v1/users/{userId}/timeline?limit=20</code><br><br>
+<b>2. Response:</b><br>
+<code>{ "data": [...], "pagination": { "nextCursor": "0192fd7e-xyz", "hasMore": true } }</code><br><br>
+<b>3. Next page (use nextCursor):</b><br>
+<code>GET /api/v1/users/{userId}/timeline?limit=20&cursor=0192fd7e-xyz</code><br><br>
+<b>4. Repeat until hasMore is false</b>
+</div>`],
+                'GET /api/v1/users/{userId}/followers': ['Get Followers', `Retrieve followers for a user.
+
+<div style="background:#f6f9fc; padding:16px; border-radius:6px; margin-top:16px; font-size:13px;">
+<b>Pagination Example:</b><br><br>
+<b>1. First page:</b><br>
+<code>GET /api/v1/users/{userId}/followers?limit=20</code><br><br>
+<b>2. Response:</b><br>
+<code>{ "data": [...], "pagination": { "nextCursor": "2026-01-27T10:30:00Z", "hasMore": true } }</code><br><br>
+<b>3. Next page (use nextCursor):</b><br>
+<code>GET /api/v1/users/{userId}/followers?limit=20&cursor=2026-01-27T10:30:00Z</code><br><br>
+<b>4. Repeat until hasMore is false</b>
+</div>`],
+                'GET /api/v1/users/{userId}/following': ['Get Following', `Retrieve users that this user follows.
+
+<div style="background:#f6f9fc; padding:16px; border-radius:6px; margin-top:16px; font-size:13px;">
+<b>Pagination Example:</b><br><br>
+<b>1. First page:</b><br>
+<code>GET /api/v1/users/{userId}/following?limit=20</code><br><br>
+<b>2. Response:</b><br>
+<code>{ "data": [...], "pagination": { "nextCursor": "2026-01-27T10:30:00Z", "hasMore": true } }</code><br><br>
+<b>3. Next page (use nextCursor):</b><br>
+<code>GET /api/v1/users/{userId}/following?limit=20&cursor=2026-01-27T10:30:00Z</code><br><br>
+<b>4. Repeat until hasMore is false</b>
+</div>`],
+                'POST /api/v1/users/{userId}/follow': ['Follow User', 'Follow another user.'],
+                'DELETE /api/v1/users/{userId}/follow': ['Unfollow User', 'Unfollow a user.'],
+            };
+            
+            for (const [key, [title, desc]] of Object.entries(titles)) {
+                if ((method + ' ' + path).startsWith(key)) {
+                    document.getElementById('endpointTitle').textContent = title;
+                    document.getElementById('endpointDesc').innerHTML = desc;
+                    break;
+                }
+            }
+            
+            // Highlight nav
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+        
+        function updateMethod() {
+            const method = document.getElementById('method').value;
+            document.getElementById('bodySection').style.display = method === 'GET' ? 'none' : 'block';
+        }
+        
+        let headerCount = 0;
+        
+        function addHeader(key = '', value = '') {
+            headerCount++;
+            const container = document.getElementById('customHeaders');
+            const row = document.createElement('div');
+            row.className = 'header-row';
+            row.id = `header-row-${headerCount}`;
+            row.innerHTML = `
+                <input type="text" class="key-input custom-header-key" placeholder="Header name" value="${key}">
+                <input type="text" class="value-input custom-header-value" placeholder="Value" value="${value}">
+                <button class="remove-header-btn" onclick="removeHeader(${headerCount})">&times;</button>
+            `;
+            container.appendChild(row);
+        }
+        
+        function removeHeader(id) {
+            const row = document.getElementById(`header-row-${id}`);
+            if (row) row.remove();
+        }
+        
+        function getCustomHeaders() {
+            const headers = {};
+            const rows = document.querySelectorAll('#customHeaders .header-row');
+            rows.forEach(row => {
+                const key = row.querySelector('.custom-header-key').value.trim();
+                const value = row.querySelector('.custom-header-value').value;
+                if (key) {
+                    headers[key] = value;
+                }
+            });
+            return headers;
+        }
+        
+        async function sendRequest() {
+            const method = document.getElementById('method').value;
+            const url = document.getElementById('url').value;
+            const userId = document.getElementById('userId').value;
+            const body = document.getElementById('body').value;
+            
+            document.getElementById('response').textContent = 'Loading...';
+            document.getElementById('statusBadge').innerHTML = '';
+            
+            try {
+                const customHeaders = getCustomHeaders();
+                const options = {
+                    method: method,
+                    headers: {
+                        'X-User-Id': userId,
+                        'Content-Type': 'application/json',
+                        ...customHeaders
+                    }
+                };
+                
+                if (body && method !== 'GET') {
+                    options.body = body;
+                }
+                
+                const res = await fetch(url, options);
+                const text = await res.text();
+                let formatted;
+                try {
+                    formatted = JSON.stringify(JSON.parse(text), null, 2);
+                } catch {
+                    formatted = text;
+                }
+                
+                document.getElementById('response').textContent = formatted;
+                document.getElementById('statusBadge').innerHTML = 
+                    `<span class="status-badge ${res.ok ? 'success' : 'error'}">${res.status} ${res.statusText}</span>`;
+            } catch (err) {
+                document.getElementById('response').textContent = 'Error: ' + err.message;
+                document.getElementById('statusBadge').innerHTML = '<span class="status-badge error">Error</span>';
+            }
+        }
+        
+        function showPaginationGuide() {
+            document.getElementById('endpointTitle').textContent = 'Cursor-Based Pagination';
+            document.getElementById('endpointDesc').innerHTML = 'How to paginate through large result sets.';
+            
+            document.getElementById('method').value = 'GET';
+            document.getElementById('url').value = BASE_URL + '/api/v1/users/{userId}/timeline?limit=20';
+            updateMethod();
+            
+            document.getElementById('response').innerHTML = `<span class="key">Pagination Guide</span>
+
+<span class="string">Endpoints that return lists use cursor-based pagination:</span>
+  • GET /api/v1/users/{userId}/tweets
+  • GET /api/v1/users/{userId}/timeline
+  • GET /api/v1/users/{userId}/followers
+  • GET /api/v1/users/{userId}/following
+
+<span class="key">Query Parameters:</span>
+  <span class="string">limit</span>  - Number of items to return (default: 20, max: 100)
+  <span class="string">cursor</span> - Opaque string for fetching the next page
+
+<span class="key">Response Format:</span>
+{
+  <span class="key">"data"</span>: [...],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"nextCursor"</span>: "abc123",  <span class="string">// Use this for next page (null if done)</span>
+    <span class="key">"hasMore"</span>: true          <span class="string">// Convenience flag</span>
+  }
+}
+
+<span class="key">Example Flow:</span>
+
+<span class="string">1. First request (no cursor):</span>
+   GET /api/v1/users/{userId}/timeline?limit=20
+
+<span class="string">2. Response includes pagination info:</span>
+   { "data": [...], "pagination": { "nextCursor": "0192fd7e-...", "hasMore": true } }
+
+<span class="string">3. Next page (use the cursor):</span>
+   GET /api/v1/users/{userId}/timeline?limit=20&cursor=0192fd7e-...
+
+<span class="string">4. Continue until hasMore is false or nextCursor is null</span>`;
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+        
+        // Initialize
+        document.getElementById('url').value = BASE_URL + '/api/v1/tweets';
+        updateMethod();
+    </script>
+</body>
+</html>

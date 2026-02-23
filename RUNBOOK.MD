@@ -24,7 +24,10 @@
 
 > 🚀 **Already deployed!** Skip setup entirely and test against a live instance:
 > 
-> **http://149.56.133.44:8080**
+> ~~**[http://149.56.133.44:8080](http://149.56.133.44:8080)**~~
+
+> ⚠️ **NOT AVAILABLE ANYMORE**
+
 > 
 > *VPS in Canada (4 vCPU, 8 GB RAM) — not performance-tuned, expect higher latency from other regions.*
 
